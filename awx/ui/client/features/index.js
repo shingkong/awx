@@ -4,6 +4,7 @@ import atLibModels from '~models';
 
 import atFeaturesApplications from '~features/applications';
 import atFeaturesCredentials from '~features/credentials';
+import atFeaturesJobs from '~features/jobs';
 import atFeaturesTemplates from '~features/templates';
 
 const MODULE_NAME = 'at.features';
@@ -14,6 +15,7 @@ angular.module(MODULE_NAME, [
     atLibModels,
     atFeaturesApplications,
     atFeaturesCredentials,
+    atFeaturesJobs,
     atFeaturesTemplates
 ]);
 
