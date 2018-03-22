@@ -73,83 +73,83 @@ class Persistence(object):
                                      y='y',
                                      name='name',
                                      type='device_type',
-                                     id='id',
+                                     id='cid',
                                      host_id='host_id'), device)
         logger.info("Device %s", device)
-        d, _ = Device.objects.get_or_create(topology_id=topology_id, id=device['id'], defaults=device)
+        d, _ = Device.objects.get_or_create(topology_id=topology_id, cid=device['cid'], defaults=device)
         d.x = device['x']
         d.y = device['y']
         d.device_type = device['device_type']
         d.host_id = device['host_id']
         d.save()
         (Topology.objects
-                 .filter(topology_id=topology_id, device_id_seq__lt=device['id'])
-                 .update(device_id_seq=device['id']))
+                 .filter(topology_id=topology_id, device_id_seq__lt=device['cid'])
+                 .update(device_id_seq=device['cid']))
 
     def onDeviceDestroy(self, device, topology_id, client_id):
-        Device.objects.filter(topology_id=topology_id, id=device['id']).delete()
+        Device.objects.filter(topology_id=topology_id, cid=device['id']).delete()
 
     def onDeviceMove(self, device, topology_id, client_id):
-        Device.objects.filter(topology_id=topology_id, id=device['id']).update(x=device['x'], y=device['y'])
+        Device.objects.filter(topology_id=topology_id, cid=device['id']).update(x=device['x'], y=device['y'])
 
     def onDeviceInventoryUpdate(self, device, topology_id, client_id):
-        Device.objects.filter(topology_id=topology_id, id=device['id']).update(host_id=device['host_id'])
+        Device.objects.filter(topology_id=topology_id, cid=device['id']).update(host_id=device['host_id'])
 
     def onDeviceLabelEdit(self, device, topology_id, client_id):
-        Device.objects.filter(topology_id=topology_id, id=device['id']).update(name=device['name'])
+        Device.objects.filter(topology_id=topology_id, cid=device['id']).update(name=device['name'])
 
     def onInterfaceLabelEdit(self, interface, topology_id, client_id):
         (Interface.objects
                   .filter(device__topology_id=topology_id,
-                          id=interface['id'],
-                          device__id=interface['device_id'])
+                          cid=interface['id'],
+                          device__cid=interface['device_id'])
                   .update(name=interface['name']))
 
     def onLinkLabelEdit(self, link, topology_id, client_id):
-        Link.objects.filter(from_device__topology_id=topology_id, id=link['id']).update(name=link['name'])
+        Link.objects.filter(from_device__topology_id=topology_id, cid=link['id']).update(name=link['name'])
 
     def onInterfaceCreate(self, interface, topology_id, client_id):
-        Interface.objects.get_or_create(device_id=Device.objects.get(id=interface['device_id'],
+        Interface.objects.get_or_create(device_id=Device.objects.get(cid=interface['device_id'],
                                                                      topology_id=topology_id).pk,
-                                        id=interface['id'],
+                                        cid=interface['id'],
                                         defaults=dict(name=interface['name']))
         (Device.objects
-               .filter(id=interface['device_id'],
+               .filter(cid=interface['device_id'],
                        topology_id=topology_id,
                        interface_id_seq__lt=interface['id'])
                .update(interface_id_seq=interface['id']))
 
     def onLinkCreate(self, link, topology_id, client_id):
         device_map = dict(Device.objects
-                                .filter(topology_id=topology_id, id__in=[link['from_device_id'], link['to_device_id']])
-                                .values_list('id', 'pk'))
-        Link.objects.get_or_create(id=link['id'],
+                                .filter(topology_id=topology_id, cid__in=[link['from_device_id'], link['to_device_id']])
+                                .values_list('cid', 'pk'))
+        Link.objects.get_or_create(cid=link['id'],
                                    name=link['name'],
                                    from_device_id=device_map[link['from_device_id']],
                                    to_device_id=device_map[link['to_device_id']],
                                    from_interface_id=Interface.objects.get(device_id=device_map[link['from_device_id']],
-                                                                           id=link['from_interface_id']).pk,
+                                                                           cid=link['from_interface_id']).pk,
                                    to_interface_id=Interface.objects.get(device_id=device_map[link['to_device_id']],
-                                                                         id=link['to_interface_id']).pk)
+                                                                         cid=link['to_interface_id']).pk)
         (Topology.objects
                  .filter(topology_id=topology_id, link_id_seq__lt=link['id'])
                  .update(link_id_seq=link['id']))
 
     def onLinkDestroy(self, link, topology_id, client_id):
         device_map = dict(Device.objects
-                                .filter(topology_id=topology_id, id__in=[link['from_device_id'], link['to_device_id']])
-                                .values_list('id', 'pk'))
+                                .filter(topology_id=topology_id, cid__in=[link['from_device_id'], link['to_device_id']])
+                                .values_list('cid', 'pk'))
         if link['from_device_id'] not in device_map:
             return
         if link['to_device_id'] not in device_map:
             return
-        Link.objects.filter(id=link['id'],
+        Link.objects.filter(cid=link['id'],
                             from_device_id=device_map[link['from_device_id']],
                             to_device_id=device_map[link['to_device_id']],
                             from_interface_id=Interface.objects.get(device_id=device_map[link['from_device_id']],
-                                                                    id=link['from_interface_id']).pk,
+                                                                    cid=link['from_interface_id']).pk,
                             to_interface_id=Interface.objects.get(device_id=device_map[link['to_device_id']],
-                                                                  id=link['to_interface_id']).pk).delete()
+                                                                  cid=link['to_interface_id']).pk).delete()
 
     def onDeviceSelected(self, message_value, topology_id, client_id):
         'Ignore DeviceSelected messages'
@@ -218,26 +218,38 @@ def send_snapshot(channel, topology_id):
     for i in (Interface.objects
               .filter(device__topology_id=topology_id)
               .values()):
+        i = transform_dict(dict(cid='id',
+                                device_id='device_id',
+                                interface_id='interface_id',
+                                name='name'), i)
         interfaces[i['device_id']].append(i)
     devices = list(Device.objects.filter(topology_id=topology_id).values())
+    devices = [transform_dict(dict(cid='id',
+                                   device_id='device_id',
+                                   device_type='device_type',
+                                   host_id='host_id',
+                                   name='name',
+                                   x='x',
+                                   y='y',
+                                   interface_id_seq='interface_id_seq'), x) for x in devices]
     for device in devices:
         device['interfaces'] = interfaces[device['device_id']]
 
-    links = [dict(id=x['id'],
+    links = [dict(id=x['cid'],
                   name=x['name'],
-                  from_device_id=x['from_device__id'],
-                  to_device_id=x['to_device__id'],
-                  from_interface_id=x['from_interface__id'],
-                  to_interface_id=x['to_interface__id'])
+                  from_device_id=x['from_device__cid'],
+                  to_device_id=x['to_device__cid'],
+                  from_interface_id=x['from_interface__cid'],
+                  to_interface_id=x['to_interface__cid'])
              for x in list(Link.objects
                                .filter(Q(from_device__topology_id=topology_id) |
                                        Q(to_device__topology_id=topology_id))
-                               .values('id',
+                               .values('cid',
                                        'name',
-                                       'from_device__id',
-                                       'to_device__id',
-                                       'from_interface__id',
-                                       'to_interface__id'))]
+                                       'from_device__cid',
+                                       'to_device__cid',
+                                       'from_interface__cid',
+                                       'to_interface__cid'))]
     snapshot = dict(sender=0,
                     devices=devices,
                     links=links)

@@ -8,7 +8,7 @@ class Device(models.Model):
     name = models.CharField(max_length=200, blank=True)
     x = models.IntegerField()
     y = models.IntegerField()
-    id = models.IntegerField()
+    cid = models.IntegerField()
     device_type = models.CharField(max_length=200, blank=True)
     interface_id_seq = models.IntegerField(default=0,)
     host_id = models.IntegerField(default=0,)
@@ -24,7 +24,7 @@ class Link(models.Model):
     to_device = models.ForeignKey('Device', related_name='to_link',)
     from_interface = models.ForeignKey('Interface', related_name='from_link',)
     to_interface = models.ForeignKey('Interface', related_name='to_link',)
-    id = models.IntegerField()
+    cid = models.IntegerField()
     name = models.CharField(max_length=200, blank=True)
 
 
@@ -52,7 +52,7 @@ class Interface(models.Model):
     interface_id = models.AutoField(primary_key=True,)
     device = models.ForeignKey('Device',)
     name = models.CharField(max_length=200, blank=True)
-    id = models.IntegerField()
+    cid = models.IntegerField()
 
     def __unicode__(self):
         return self.name

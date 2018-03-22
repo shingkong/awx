@@ -8,7 +8,7 @@ import yaml
 import json
 
 NetworkAnnotatedInterface = Interface.objects.values('name',
-                                                     'id',
+                                                     'cid',
                                                      'from_link__pk',
                                                      'to_link__pk',
                                                      'from_link__to_device__name',
@@ -39,13 +39,13 @@ def topology_data(topology_id):
                                network=x['from_link__pk'] or x['to_link__pk'],
                                remote_device_name=x['from_link__to_device__name'] or x['to_link__from_device__name'],
                                remote_interface_name=x['from_link__to_interface__name'] or x['to_link__from_interface__name'],
-                               id=x['id'],
+                               id=x['cid'],
                                ) for x in interfaces]
             data['devices'].append(dict(name=device.name,
                                         type=device.device_type,
                                         x=device.x,
                                         y=device.y,
-                                        id=device.id,
+                                        id=device.cid,
                                         interfaces=interfaces))
 
         for link in links:
@@ -53,10 +53,10 @@ def topology_data(topology_id):
                                       to_device=link.to_device.name,
                                       from_interface=link.from_interface.name,
                                       to_interface=link.to_interface.name,
-                                      from_device_id=link.from_device.id,
-                                      to_device_id=link.to_device.id,
-                                      from_interface_id=link.from_interface.id,
-                                      to_interface_id=link.to_interface.id,
+                                      from_device_id=link.from_device.cid,
+                                      to_device_id=link.to_device.cid,
+                                      from_interface_id=link.from_interface.cid,
+                                      to_interface_id=link.to_interface.cid,
                                       name=link.name,
                                       network=link.pk))
 
