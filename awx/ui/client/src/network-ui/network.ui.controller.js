@@ -933,8 +933,7 @@ var NetworkUIController = function($scope,
         $scope.test_channel.send("EnableTest", new messages.EnableTest());
     };
 
-    $scope.all_buttons = [];
-    $scope.all_buttons.extend($scope.context_menu_buttons);
+    $scope.all_buttons = $scope.context_menu_buttons;
 
     $scope.onDeviceCreate = function(data) {
         $scope.create_device(data);
