@@ -856,7 +856,7 @@ var NetworkUIController = function($scope,
 
     $scope.$on('awxNet-zoom', (e, zoomPercent) => {
         let v_center = $scope.to_virtual_coordinates($scope.graph.width/2, $scope.graph.height/2);
-        let scale = Math.pow(10, (zoomPercent - 120) / 40);
+        let scale = Math.pow(10, (zoomPercent - 120) / 120);
         $scope.jump_to_animation(v_center.x, v_center.y, scale, false);
     });
 
