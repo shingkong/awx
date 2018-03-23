@@ -206,7 +206,7 @@ def ws_connect(message):
     Group("client-%s" % client.pk).add(message.reply_channel)
     message.reply_channel.send({"text": json.dumps(["id", client.pk])})
     message.reply_channel.send({"text": json.dumps(["topology_id", topology_id])})
-    topology_data = transform_dict(dict(topology_id='topology_id',
+    topology_data = transform_dict(dict(id='topology_id',
                                         name='name',
                                         panX='panX',
                                         panY='panY',
@@ -226,12 +226,12 @@ def send_snapshot(channel, topology_id):
               .values()):
         i = transform_dict(dict(cid='id',
                                 device_id='device_id',
-                                interface_id='interface_id',
+                                id='interface_id',
                                 name='name'), i)
         interfaces[i['device_id']].append(i)
     devices = list(Device.objects.filter(topology_id=topology_id).values())
     devices = [transform_dict(dict(cid='id',
-                                   device_id='device_id',
+                                   id='device_id',
                                    device_type='device_type',
                                    host_id='host_id',
                                    name='name',
