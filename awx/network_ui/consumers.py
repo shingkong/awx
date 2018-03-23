@@ -1,5 +1,4 @@
 # Copyright (c) 2017 Red Hat, Inc
-# In consumers.py
 from channels import Group, Channel
 from channels.sessions import channel_session
 from awx.network_ui.models import Topology, Device, Link, Client, Interface
@@ -13,7 +12,6 @@ import logging
 from awx.network_ui.utils import transform_dict
 
 import json
-# Connected to websocket.connect
 
 logger = logging.getLogger("awx.network_ui.consumers")
 
@@ -30,6 +28,10 @@ def parse_inventory_id(data):
 
 
 class Persistence(object):
+
+    '''
+    Provides database persistence for the topology canvas.
+    '''
 
     def parse_message_text(self, message_text, client_id):
         data = json.loads(message_text)
@@ -48,6 +50,10 @@ class Persistence(object):
             return None, None
 
     def handle(self, message):
+        '''
+        Dispatches a message based on the message type to a handler function
+        of name onX where X is the message type.
+        '''
         topology_id = message.get('topology')
         assert topology_id is not None, "No topology_id"
         client_id = message.get('client')
@@ -83,7 +89,7 @@ class Persistence(object):
         d.host_id = device['host_id']
         d.save()
         (Topology.objects
-                 .filter(topology_id=topology_id, device_id_seq__lt=device['cid'])
+                 .filter(pk=topology_id, device_id_seq__lt=device['cid'])
                  .update(device_id_seq=device['cid']))
 
     def onDeviceDestroy(self, device, topology_id, client_id):
@@ -132,7 +138,7 @@ class Persistence(object):
                                    to_interface_id=Interface.objects.get(device_id=device_map[link['to_device_id']],
                                                                          cid=link['to_interface_id']).pk)
         (Topology.objects
-                 .filter(topology_id=topology_id, link_id_seq__lt=link['id'])
+                 .filter(pk=topology_id, link_id_seq__lt=link['id'])
                  .update(link_id_seq=link['id']))
 
     def onLinkDestroy(self, link, topology_id, client_id):
@@ -181,17 +187,17 @@ def ws_connect(message):
     # Accept connection
     data = urlparse.parse_qs(message.content['query_string'])
     inventory_id = parse_inventory_id(data)
-    topology_ids = list(TopologyInventory.objects.filter(inventory_id=inventory_id).values_list('topology_id', flat=True))
+    topology_ids = list(TopologyInventory.objects.filter(inventory_id=inventory_id).values_list('pk', flat=True))
     topology_id = None
     if len(topology_ids) > 0:
         topology_id = topology_ids[0]
     if topology_id is not None:
-        topology = Topology.objects.get(topology_id=topology_id)
+        topology = Topology.objects.get(pk=topology_id)
     else:
         topology = Topology(name="topology", scale=1.0, panX=0, panY=0)
         topology.save()
         TopologyInventory(inventory_id=inventory_id, topology_id=topology.topology_id).save()
-    topology_id = topology.topology_id
+    topology_id = topology.pk
     message.channel_session['topology_id'] = topology_id
     Group("topology-%s" % topology_id).add(message.reply_channel)
     client = Client()
