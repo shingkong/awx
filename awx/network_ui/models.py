@@ -11,7 +11,7 @@ class Device(models.Model):
     cid = models.IntegerField()
     device_type = models.CharField(max_length=200, blank=True)
     interface_id_seq = models.IntegerField(default=0,)
-    host_id = models.IntegerField(default=0,)
+    host = models.ForeignKey('main.Host', default=None, null=True, on_delete=models.SET_NULL)
 
     def __unicode__(self):
         return self.name
@@ -62,4 +62,4 @@ class TopologyInventory(models.Model):
 
     id = models.AutoField(primary_key=True,)
     topology = models.ForeignKey('Topology',)
-    inventory_id = models.IntegerField()
+    inventory = models.ForeignKey('main.Inventory')
